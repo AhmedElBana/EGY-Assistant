@@ -15,7 +15,18 @@ app.post('/createUser',(req,res) => {
 	},(err) => {
 		res.status(400).send(err);
 	});
-})
+});
+
+app.get('/getAllUsers',(req,res) => {
+	User.find().then((users) => {
+		res.send({
+			usersNumber: users.length,
+			usersArr: users
+		});
+	},(err) => {
+		res.status(400).send(err);
+	});
+});
 
 
 const port = process.env.PORT || 3000
