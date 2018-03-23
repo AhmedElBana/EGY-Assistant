@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const {ObjectID} = require('mongodb');
 
 let {mongoose} = require('./db/mongoose');
 let {User} = require('./db/models/user');
@@ -28,6 +29,20 @@ app.get('/getAllUsers',(req,res) => {
 	});
 });
 
+app.delete('/userDelete/:id',(req,res) => {
+	let id = req.params.id;
+	if( !ObjectID.isValid(id) ){
+		return res.status(404).send();
+	}
+	User.findByIdAndRemove(id).then((user) => {
+		if(!user){
+			return res.status(400).send();
+		}
+		res.send({user});
+	}).catch((err) => {
+		res.status(400).send();
+	});
+});
 
 const port = process.env.PORT || 3000;
 app.listen(port,() => {
