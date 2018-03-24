@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
 const {ObjectID} = require('mongodb');
@@ -40,6 +41,38 @@ app.delete('/userDelete/:id',(req,res) => {
 		}
 		res.send({user});
 	}).catch((err) => {
+		res.status(400).send();
+	});
+});
+
+app.patch('/updateUser/:id',(req,res) => {
+	let id = req.params.id;
+	let body = _.pick(req.body, ['userName','email','password','mainUser']);
+	let changesObject = {};
+	if( !ObjectID.isValid(id) ){
+		return res.status(404).send();
+	}
+
+	if( body.userName ){
+		changesObject.userName = body.userName;
+	}
+	if( body.email ){
+		changesObject.email = body.email;
+	}
+	if( body.password ){
+		changesObject.password = body.password;
+	}
+	if(_.isBoolean(body.mainUser) && body.mainUser){
+		changesObject.mainUser = body.mainUser; 
+	}
+
+	User.findByIdAndUpdate(id, {$set: changesObject}, {new: true}).then((user) => {
+		if(!user){
+			return res.status(404).send();
+		}
+
+		res.send({user});
+	},(err) => {
 		res.status(400).send();
 	});
 });
