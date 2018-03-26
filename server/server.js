@@ -5,7 +5,7 @@ const {ObjectID} = require('mongodb');
 
 let {mongoose} = require('./db/mongoose');
 let {User} = require('./db/models/user');
-
+let {authenticate} = require('./middleware/authenticate');
 let app = express();
 app.use(bodyParser.json());
 
@@ -81,23 +81,12 @@ app.patch('/updateUser/:id',(req,res) => {
 	});
 });
 
+
+app.get('/users/me',authenticate, (req, res) => {
+	res.send(req.user);
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port,() => {
     console.log(`Server is up on port ${port}`);
 });
-
-
-
-
-// let newUser = new User({
-// 	userName: "ahmed_elbanna",
-// 	email: "ahmedelpna@gmail.com",
-// 	password: "123",
-// 	mainUser: true
-// });
-
-// newUser.save().then((doc) => {
-// 	console.log('saved user : ' + doc);
-// },(err) => {
-// 	console.log('Unable to save newUser.')
-// });
