@@ -97,6 +97,15 @@ app.post('/users/login',(req, res) => {
 		res.status(400).send();
 	});
 });
+
+app.delete('/users/me/token',authenticate, (req, res) => {
+	req.user.removeToken(req.token).then(() => {
+		res.status(200).send();
+	}, () => {
+		res.status(400).send();
+	});
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port,() => {
     console.log(`Server is up on port ${port}`);
