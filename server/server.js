@@ -1,3 +1,5 @@
+require('./config/config');
+
 const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -106,7 +108,7 @@ app.delete('/users/me/token',authenticate, (req, res) => {
 	});
 });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT;
 app.listen(port,() => {
     console.log(`Server is up on port ${port}`);
 });
