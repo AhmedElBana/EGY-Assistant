@@ -24,6 +24,11 @@ let UserSchema = new mongoose.Schema({
           message: '{VALUE} is not a valid email!'
         }
 	},
+	city: {
+		type: String,
+		minlenght: 1,
+		required: true
+	},
 	password: {
 		type: String,
 		minlenght: 6,
@@ -33,6 +38,11 @@ let UserSchema = new mongoose.Schema({
 		type: Boolean,
 		required: true,
 		default: false
+	},
+	deviceId: {
+		type: String,
+		minlenght: 2,
+		required: true
 	},tokens: [{
 		access: {
 			type: String,
@@ -55,7 +65,7 @@ UserSchema.methods.toJSON = function(){
 UserSchema.methods.generateAuthToken = function(){
 	let user = this;
 	let access = 'auth';
-	let token = jwt.sign({_id: user._id.toHexString(), access}, process.env.JWT_SECRET).toString();
+	let token = jwt.sign({_id: user._id.toHexString(), access}, process.env.JWT_SECRET, { expiresIn: 60 * 60 }).toString();
 	user.tokens.push({access,token});
 
 	return user.save().then(() => {
@@ -74,11 +84,42 @@ UserSchema.methods.removeToken = function(token){
 UserSchema.statics.findByToken = function(token){
 	let User = this;
 	let decoded;
-	try{
-		decoded = jwt.verify(token, process.env.JWT_SECRET);
-	} catch(e){
-		return Promise.reject();
+	try {
+	  decoded = jwt.verify(token, process.env.JWT_SECRET);
+	} catch(err) {
+	    console.log('----------------------------------');
+		console.log(err.name);
+		console.log(err.message);
+		console.log(err.expiredAt);
+		console.log('----------------------------------');
+		if(err.message == 'jwt expired'){
+			User.findOne({
+						'tokens': {$elemMatch: {'token':token, 'access':'auth'}}
+			}).then((result) => {
+				if(result){
+					console.log(result);
+					console.log('----------------------------------');
+					result.update({
+						$pull: {
+							tokens: {token}
+						}
+					}).then((expireToken) => {
+						console.log(expireToken);
+					}).catch((e) => {
+						console.log(e);
+					});
+				}else{
+					console.log('token not found');
+				}
+			}).catch((e) => {
+				console.log(e);
+			});
+			return Promise.reject();
+		}else{
+			return Promise.reject();
+		}
 	}
+
 	return User.findOne({
 		'_id': decoded._id,
 		'tokens.token': token,

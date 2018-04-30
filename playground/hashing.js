@@ -9,7 +9,7 @@ bcrypt.genSalt(10, (err, salt) => {
 	});
 });
 
-let hashedPassword = '$2a$10$glJUIyPsZSs10msfH9EjQOuhmbA1CKcu1w9vtiyhSm/lBgZJftDEm';
+let hashedPassword = '$2a$10$it1kPpnRjZjbwHbUHz95d.s4vsag9OTqPEvwokV2hdAVG6RSOaiju';
 bcrypt.compare(password, hashedPassword, (err, res) => {
 	console.log(res);
 });

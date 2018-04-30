@@ -8,21 +8,39 @@ const {ObjectID} = require('mongodb');
 let {mongoose} = require('./db/mongoose');
 let {User} = require('./db/models/user');
 let {authenticate} = require('./middleware/authenticate');
+let {Device} = require('./db/models/device');
 let app = express();
 app.use(bodyParser.json());
 
 app.post('/createUser',(req,res) => {
-	let body = _.pick(req.body, ['userName','email','password','mainUser']);
-	let user = new User(body);
+	let body = _.pick(req.body, ['userName','email','city','password','deviceId']);
+	let userData = new User(body);
+	userData.mainUser = true;
 
+	//check deviceId 
+	Device.findOne({
+		deviceId: userData.deviceId
+	}).then((result) => {
 
-	user.save().then((user) => {
-		return user.generateAuthToken();
-	}).then((token) => {
-		res.header('x-auth', token).send(user);
-	}).catch((e) => {
-		res.status(400).send(e);
+		if(!result){
+			res.status(400).send({"error": "Device ID Not found"});
+		}else if(result.mainUserId != undefined){
+			res.status(400).send({"error": "Device is used before"});
+		}else{
+			userData.save().then((user) => {
+				//set mainUserId to the device
+				Device.update({deviceId: userData.deviceId}, { $set:{mainUserId: user._id}}).then((err, device) => {
+					user.generateAuthToken().then((token) => {
+						res.header('x-auth', token).send(user);
+					});
+				});
+			}).catch((e) => {
+				res.status(400).send(e);
+			});
+		}
 	});
+
+	
 });
 
 app.get('/getAllUsers',(req,res) => {
@@ -105,6 +123,19 @@ app.delete('/users/me/token',authenticate, (req, res) => {
 		res.status(200).send();
 	}, () => {
 		res.status(400).send();
+	});
+});
+
+
+//----------------------- device
+app.post('/createDevice',(req,res) => {
+	let body = _.pick(req.body, ['deviceId','mainUserId']);
+	let device = new Device(body);
+
+	device.save().then(() => {
+		res.status(200).send();
+	}, (e) => {
+		res.status(400).send(e);
 	});
 });
 
