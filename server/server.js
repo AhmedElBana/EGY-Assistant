@@ -107,8 +107,7 @@ app.patch('/updateUser/:id',(req,res) => {
 	});
 });
 
-
-app.get('/users/me',authenticate, (req, res) => {
+app.get('/users/data',authenticate, (req, res) => {
 	res.send(req.user);
 });
 
