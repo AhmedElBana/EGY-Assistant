@@ -35,7 +35,13 @@ app.post('/createUser',(req,res) => {
 					});
 				});
 			}).catch((e) => {
-				res.status(400).send(e);
+				if (e.code === 11000) {
+				    if(e.errmsg.search("email_1 dup key") != -1){
+				    	res.status(400).send({"error": "Email is used before"});
+				    }
+				} else {
+				    res.status(400).send(e);
+				}
 			});
 		}
 	});
