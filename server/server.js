@@ -12,6 +12,7 @@ let {Device} = require('./db/models/device');
 let app = express();
 app.use(bodyParser.json());
 
+//------------ start update user data -------------------
 app.post('/update/user/image',authenticate, (req, res) => {
 	let userImage = _.pick(req.body, ['userImage']);
 	//set image
@@ -22,6 +23,25 @@ app.post('/update/user/image',authenticate, (req, res) => {
 	  res.send(user);
 	});
 });
+app.post('/update/user/email',authenticate, (req, res) => {
+	let newEmail = _.pick(req.body, ['newEmail']);
+	//set new email
+	let query   = { _id: req.user._id }; 
+	let update  = { email: newEmail.newEmail }; 
+	let options = { new: true };
+	User.findOneAndUpdate(query, update, options, (err, user) => { 
+	  if( err ){
+	  	if (err.code === 11000 && err.codeName === "DuplicateKey") {
+		    res.status(400).send({"error": "Email is used before"});
+		} else {
+		    res.status(400).send(err);
+		}
+	  }else{
+	  	res.send(user);
+	  }
+	});
+});
+//------------ end update user data ---------------------
 
 app.post('/createUser',(req,res) => {
 	let body = _.pick(req.body, ['userName','email','city','password','deviceId']);
