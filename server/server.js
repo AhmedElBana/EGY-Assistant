@@ -12,6 +12,17 @@ let {Device} = require('./db/models/device');
 let app = express();
 app.use(bodyParser.json());
 
+app.post('/update/user/image',authenticate, (req, res) => {
+	let userImage = _.pick(req.body, ['userImage']);
+	//set image
+	let query   = { _id: req.user._id }; 
+	let update  = { image: userImage.userImage }; 
+	let options = { new: true };
+	User.findOneAndUpdate(query, update, options, (err, user) => { 
+	  res.send(user);
+	});
+});
+
 app.post('/createUser',(req,res) => {
 	let body = _.pick(req.body, ['userName','email','city','password','deviceId']);
 	let userData = new User(body);
