@@ -4,6 +4,7 @@ const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
 const {ObjectID} = require('mongodb');
+const bcrypt = require('bcryptjs');
 
 let {mongoose} = require('./db/mongoose');
 let {User} = require('./db/models/user');
@@ -40,6 +41,40 @@ app.post('/update/user/email',authenticate, (req, res) => {
 	  	res.send(user);
 	  }
 	});
+});
+app.post('/update/user/name',authenticate, (req, res) => {
+	let newName = _.pick(req.body, ['newName']);
+	//set new name
+	let query   = { _id: req.user._id };
+	let update  = { userName: newName.newName }; 
+	let options = { new: true };
+	User.findOneAndUpdate(query, update, options, (err, user) => { 
+	  if( err ){
+		res.status(400).send(err);
+	  }else{
+	  	res.send(user);
+	  }
+	});
+});
+app.post('/update/user/password',authenticate, (req, res) => {
+	let newPassword = _.pick(req.body, ["newPassword"]);
+
+	bcrypt.genSalt(10, (err, salt) => {
+		bcrypt.hash(newPassword.newPassword, salt, (err, hash) => {
+			//set new password
+			let query   = { _id: req.user._id };
+			let update  = { password: hash }; 
+			let options = { new: true };
+			User.findOneAndUpdate(query, update, options, (err, user) => { 
+			  if( err ){
+				res.status(400).send(err);
+			  }else{
+			  	res.send({"message": "Password Changed Successfully."});
+			  }
+			});
+		});
+	});
+	
 });
 //------------ end update user data ---------------------
 
