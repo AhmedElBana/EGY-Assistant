@@ -78,10 +78,51 @@ app.post('/update/user/password',authenticate, (req, res) => {
 });
 //------------ end update user data ---------------------
 
+
+//------------ start create sub-user --------------------
+app.post('/create/subUser', authenticate, (req, res) => {
+	let currentUser = req.user;
+	if( currentUser.mainUser ){
+		if( currentUser.subUserNum < 6 ){
+			let body = _.pick(req.body, ['userName','email','password','city']);
+			let subUserData = new User(body);
+			subUserData.mainUser = false;
+			subUserData.deviceId = currentUser.deviceId;
+
+			subUserData.save().then((subUuser) => {
+				//update number of sub users in main user
+				let query   = { _id: currentUser._id };
+				let update  = { subUserNum: currentUser.subUserNum + 1 }; 
+				let options = { new: true };
+				User.findOneAndUpdate(query, update, options, (err, mainUser) => { 
+				  if( err ){
+					res.status(400).send(err);
+				  }else{
+				  	res.send(subUuser);
+				  }
+				});
+			}).catch((e) => {
+				if (e.code === 11000) {
+				    if(e.errmsg.search("email_1 dup key") != -1){
+				    	res.status(400).send({"error": "Email is used before"});
+				    }
+				} else {
+				    res.status(400).send(e);
+				}
+			});
+		}else{
+			res.status(400).send({"error": "Can't Create More Than 6 Sub Users"});
+		}
+	}else{
+		res.status(400).send({"error": "Don't have permission to create sub user"});
+	}
+});
+//------------ end create sub-user ----------------------
 app.post('/createUser',(req,res) => {
 	let body = _.pick(req.body, ['userName','email','city','password','deviceId']);
 	let userData = new User(body);
 	userData.mainUser = true;
+	userData.subUserNum = 0;
 
 	//check deviceId 
 	Device.findOne({

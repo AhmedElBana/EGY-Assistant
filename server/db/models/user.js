@@ -42,6 +42,9 @@ let UserSchema = new mongoose.Schema({
 		required: true,
 		default: false
 	},
+	subUserNum: {
+		type: Number
+	},
 	deviceId: {
 		type: String,
 		minlenght: 2,
@@ -62,7 +65,7 @@ UserSchema.methods.toJSON = function(){
 	let user = this;
 	let userObject = user.toObject();
 
-	return _.pick(userObject, ['_id','userName','email','image'])
+	return _.pick(userObject, ['_id','userName','email','image','mainUser','deviceId'])
 }
 
 UserSchema.methods.generateAuthToken = function(){
