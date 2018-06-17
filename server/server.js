@@ -275,7 +275,7 @@ app.post('/users/login',(req, res) => {
 			res.header('x-auth', token).send(user);
 		});
 	}).catch((e) => {
-		res.status(400).send();
+		res.status(400).send({"error": "User name or password is not correct."});
 	});
 });
 
