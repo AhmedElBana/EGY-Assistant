@@ -148,6 +148,24 @@ app.post('/remove/subUser', authenticate, (req, res) => {
 		res.status(400).send({"error": "Don't have permission to remove sub user"});
 	}
 });
+app.get('/users/getAllSubUsers', authenticate, (req,res) => {
+	let currentUser = req.user;
+	if( currentUser.mainUser ){
+		let query  = { 
+						deviceId: currentUser.deviceId,
+						mainUser: false
+					 };
+		User.find(query).then((result) => {
+			if(result.length == 0){
+				res.status(400).send({"error": "Can't find any sub users."});
+			}else{
+				res.send(result);
+			}
+		});
+	}else{
+		res.status(400).send({"error": "Don't have permission to remove sub user"});
+	}
+});
 //------------ end sub-user ----------------------
 app.post('/createUser',(req,res) => {
 	let body = _.pick(req.body, ['userName','email','city','password','deviceId']);
