@@ -15,9 +15,20 @@ let DeviceSchema = new mongoose.Schema({
 	mainUserId: {
 		type: String,
 		minlenght: 2
-	},subUsers: [{
+	},
+	subUsers: [{
 		userId: {
 			type: String,
+			required: true
+		}
+	}],
+	components: [{
+		componentName: {
+			type: String,
+			required: true
+		},
+		componentState: {
+			type: Number,
 			required: true
 		}
 	}]

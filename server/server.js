@@ -99,7 +99,23 @@ app.post('/create/subUser', authenticate, (req, res) => {
 				  if( err ){
 					res.status(400).send(err);
 				  }else{
-				  	res.send(subUuser);
+				  	//update number of sub users in Device data
+				  	Device.findOne({
+						deviceId: currentUser.deviceId
+					}).then((result) => {
+						let subUsersList = [...result.subUsers, subUuser._id];
+
+						let devQuery   = { deviceId: currentUser.deviceId };
+						let devUpdate  = { subUsers: subUsersList }; 
+						let devOptions = { new: true };
+						Device.findOneAndUpdate(devQuery, devUpdate, devOptions, (err, device) => { 
+						  if( err ){
+							res.status(400).send(err);
+						  }else{
+							res.send(subUuser);
+						  }
+						});
+					});
 				  }
 				});
 			}).catch((e) => {
@@ -290,13 +306,45 @@ app.delete('/users/me/token',authenticate, (req, res) => {
 
 //----------------------- device
 app.post('/createDevice',(req,res) => {
-	let body = _.pick(req.body, ['deviceId','mainUserId']);
+	let body = _.pick(req.body, ['deviceId','mainUserId','components']);
 	let device = new Device(body);
 
 	device.save().then(() => {
 		res.status(200).send();
 	}, (e) => {
 		res.status(400).send(e);
+	});
+});
+app.get('/device/getAllDevicesState', authenticate, (req,res) => {
+	let currentUser = req.user;
+	Device.findOne({
+		deviceId: currentUser.deviceId
+	}).then((result) => {
+		res.send(result.components);
+	});
+});
+app.post('/device/changeComponentState', authenticate, (req, res) => {
+	let body = _.pick(req.body, ['componentName','componentState']);
+	let currentUser = req.user;
+	Device.findOne({
+		deviceId: currentUser.deviceId
+	}).then((result) => {
+		let componentsList = result.components;
+		for(let i=0;i < componentsList.length; i++){
+			if(componentsList[i].componentName == body.componentName){
+				componentsList[i].componentState = body.componentState;
+			}
+		}
+		let query   = { deviceId: currentUser.deviceId };
+		let update  = { components: componentsList }; 
+		let options = { new: true };
+		Device.findOneAndUpdate(query, update, options, (err, device) => { 
+		  if( err ){
+			res.status(400).send(err);
+		  }else{
+		  	res.send(device.components);
+		  }
+		});
 	});
 });
 
