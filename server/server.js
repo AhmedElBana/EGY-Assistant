@@ -5,6 +5,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const {ObjectID} = require('mongodb');
 const bcrypt = require('bcryptjs');
+const axios = require('axios');
 
 let {mongoose} = require('./db/mongoose');
 let {User} = require('./db/models/user');
@@ -12,6 +13,7 @@ let {authenticate} = require('./middleware/authenticate');
 let {Device} = require('./db/models/device');
 let app = express();
 app.use(bodyParser.json());
+
 
 //------------ start update user data -------------------
 app.post('/update/user/image',authenticate, (req, res) => {
@@ -306,7 +308,7 @@ app.delete('/users/me/token',authenticate, (req, res) => {
 
 //----------------------- device
 app.post('/createDevice',(req,res) => {
-	let body = _.pick(req.body, ['deviceId','mainUserId','components']);
+	let body = _.pick(req.body, ['deviceId','mainUserId','components','writeAPIKey','readAPIKey']);
 	let device = new Device(body);
 
 	device.save().then(() => {
@@ -342,11 +344,52 @@ app.post('/device/changeComponentState', authenticate, (req, res) => {
 		  if( err ){
 			res.status(400).send(err);
 		  }else{
-		  	res.send(device.components);
+		  	//update components state on thingspeak
+			updateThingspeak(device).then((thingspeakRespond) => {
+				res.send(thingspeakRespond);
+			}).catch((err) => {
+				res.status(400).send(err);
+			});
 		  }
 		});
 	});
 });
+
+const updateThingspeak = (device) => {
+	return new Promise((resolve, reject) => {
+        axios.get('https://api.thingspeak.com/update?api_key=' + device.writeAPIKey + '&field1=' + (device.components[0].componentState * 1000) + '&field2=' + (device.components[1].componentState * 1000) + '&field3=' + (device.components[2].componentState * 1000) + '&field4=' + (device.components[3].componentState * 1000) + '')
+          .then(response => {
+		    resolve(device.components);
+		  })
+		  .catch(error => {
+		    console.log('error happen while sending the get request');
+		    reject(error);
+		  });
+    });
+}
+//------------- start test axios ------------------------
+app.get('/test/axios', (req, res) => {
+	getNasaData().then((axiosData) => {
+		res.send(axiosData.explanation);
+	}).catch((err) => {
+		res.status(400).send(err);
+	});
+});
+const getNasaData = () =>{
+	
+	return new Promise((resolve, reject) => {
+
+        axios.get('https://api.thingspeak.com/update?api_key=I5V36XMFN6L1Q2H5&field1=0&field2=7777&field3=7777&field4=0')
+          .then(response => {
+		    resolve(response.data);
+		  })
+		  .catch(error => {
+		    console.log('error happen while sending the get request');
+		    reject(error);
+		  });
+    });
+}
+//------------ end test axios ---------------------------
 
 const port = process.env.PORT;
 app.listen(port,() => {

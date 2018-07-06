@@ -12,6 +12,14 @@ let DeviceSchema = new mongoose.Schema({
 		trim: true,
 		minlenght: 1		
 	},
+	writeAPIKey: {
+		type: String,
+		required: true
+	},
+	readAPIKey: {
+		type: String,
+		required: true
+	},
 	mainUserId: {
 		type: String,
 		minlenght: 2
