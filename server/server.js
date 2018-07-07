@@ -325,6 +325,38 @@ app.get('/device/getAllDevicesState', authenticate, (req,res) => {
 		res.send(result.components);
 	});
 });
+
+app.post('/hardware/changeComponentState', (req, res) => {
+	let body = _.pick(req.body, ['deviceId','componentName','componentState']);
+
+	Device.findOne({
+		deviceId: body.deviceId
+	}).then((result) => {
+		let componentsList = result.components;
+		for(let i=0;i < componentsList.length; i++){
+			if(componentsList[i].componentName == body.componentName){
+				componentsList[i].componentState = body.componentState;
+			}
+		}
+		let query   = { deviceId: body.deviceId };
+		let update  = { components: componentsList }; 
+		let options = { new: true };
+		Device.findOneAndUpdate(query, update, options, (err, device) => { 
+		  if( err ){
+			res.status(400).send(err);
+		  }else{
+		  	//update components state on thingspeak
+			updateThingspeak(device).then((thingspeakRespond) => {
+				res.send(thingspeakRespond);
+			}).catch((err) => {
+				res.status(400).send(err);
+			});
+		  }
+		});
+	}).catch((err) => {
+		res.status(400).send(err);
+	});
+});
 app.post('/device/changeComponentState', authenticate, (req, res) => {
 	let body = _.pick(req.body, ['componentName','componentState']);
 	let currentUser = req.user;
