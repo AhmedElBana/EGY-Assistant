@@ -389,7 +389,7 @@ app.post('/device/changeComponentState', authenticate, (req, res) => {
 
 const updateThingspeak = (device) => {
 	return new Promise((resolve, reject) => {
-        axios.get('https://api.thingspeak.com/update?api_key=' + device.writeAPIKey + '&field1=' + (device.components[0].componentState * 1000) + '&field2=' + (device.components[1].componentState * 1000) + '&field3=' + (device.components[2].componentState * 1000) + '&field4=' + (device.components[3].componentState * 1000) + '')
+        axios.get('https://api.thingspeak.com/update?api_key=' + device.writeAPIKey + '&field1=' + (device.components[0].componentState * 1000) + '&field2=' + (device.components[1].componentState * 1000) + '&field3=' + (device.components[2].componentState * 1000) + '&field4=' + (device.components[3].componentState * 1000) + '&field5=' + (device.components[4].componentState * 1000) + '')
           .then(response => {
 		    resolve(device.components);
 		  })
