@@ -322,30 +322,40 @@ app.get('/device/getAllDevicesState', authenticate, (req,res) => {
 	Device.findOne({
 		deviceId: currentUser.deviceId
 	}).then((device) => {
-		readThingspeak(device).then((thingspeakRespond) => {
-			let componentsList = device.components;
-			componentsList[0].componentState = thingspeakRespond.field2;
-			componentsList[1].componentState = thingspeakRespond.field4;
-			componentsList[2].componentState = thingspeakRespond.field3;
-			componentsList[3].componentState = thingspeakRespond.field1;
-			let query   = { deviceId: currentUser.deviceId };
-			let update  = { components: componentsList }; 
-			let options = { new: true };
-			Device.findOneAndUpdate(query, update, options, (err, device) => { 
-			  if( err ){
-				res.status(400).send(err);
-			  }else{
-			  	//update components state on thingspeak
-				updateThingspeak(device).then((thingspeakRespond) => {
-					res.send(thingspeakRespond);
-				}).catch((err) => {
+		//check if auto control is on or not
+		if(device.components[4].componentState == 1){
+			readThingspeak(device).then((thingspeakRespond) => {
+				let componentsList = device.components;
+				componentsList[0].componentState = thingspeakRespond.field2;
+				componentsList[1].componentState = thingspeakRespond.field4;
+				componentsList[2].componentState = thingspeakRespond.field3;
+				componentsList[3].componentState = thingspeakRespond.field1;
+				let query   = { deviceId: currentUser.deviceId };
+				let update  = { components: componentsList }; 
+				let options = { new: true };
+				Device.findOneAndUpdate(query, update, options, (err, device) => { 
+				  if( err ){
 					res.status(400).send(err);
+				  }else{
+				  	//update components state on thingspeak
+					updateThingspeak(device).then((thingspeakRespond) => {
+						res.send(thingspeakRespond);
+					}).catch((err) => {
+						res.status(400).send(err);
+					});
+				  }
 				});
-			  }
+			}).catch((err) => {
+				res.status(400).send(err);
 			});
-		}).catch((err) => {
-			res.status(400).send(err);
-		});
+		}else{
+			let currentUser = req.user;
+			Device.findOne({
+				deviceId: currentUser.deviceId
+			}).then((result) => {
+				res.send(result.components);
+			});
+		}
 	});
 });
 
