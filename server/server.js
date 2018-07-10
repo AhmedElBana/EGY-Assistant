@@ -321,8 +321,31 @@ app.get('/device/getAllDevicesState', authenticate, (req,res) => {
 	let currentUser = req.user;
 	Device.findOne({
 		deviceId: currentUser.deviceId
-	}).then((result) => {
-		res.send(result.components);
+	}).then((device) => {
+		readThingspeak(device).then((thingspeakRespond) => {
+			let componentsList = device.components;
+			componentsList[0].componentState = thingspeakRespond.field2;
+			componentsList[1].componentState = thingspeakRespond.field4;
+			componentsList[2].componentState = thingspeakRespond.field3;
+			componentsList[3].componentState = thingspeakRespond.field1;
+			let query   = { deviceId: currentUser.deviceId };
+			let update  = { components: componentsList }; 
+			let options = { new: true };
+			Device.findOneAndUpdate(query, update, options, (err, device) => { 
+			  if( err ){
+				res.status(400).send(err);
+			  }else{
+			  	//update components state on thingspeak
+				updateThingspeak(device).then((thingspeakRespond) => {
+					res.send(thingspeakRespond);
+				}).catch((err) => {
+					res.status(400).send(err);
+				});
+			  }
+			});
+		}).catch((err) => {
+			res.status(400).send(err);
+		});
 	});
 });
 
@@ -392,6 +415,19 @@ const updateThingspeak = (device) => {
         axios.get('https://api.thingspeak.com/update?api_key=' + device.writeAPIKey + '&field1=' + (device.components[0].componentState * 1000) + '&field2=' + (device.components[1].componentState * 1000) + '&field3=' + (device.components[2].componentState * 1000) + '&field4=' + (device.components[3].componentState * 1000) + '&field5=' + (device.components[4].componentState * 1000) + '')
           .then(response => {
 		    resolve(device.components);
+		  })
+		  .catch(error => {
+		    console.log('error happen while sending the get request');
+		    reject(error);
+		  });
+    });
+}
+
+const readThingspeak = (device) => {
+	return new Promise((resolve, reject) => {
+        axios.get('https://api.thingspeak.com/channels/520515/feeds.json?results=1')
+          .then(response => {
+		    resolve(response.data.feeds[0]);
 		  })
 		  .catch(error => {
 		    console.log('error happen while sending the get request');
